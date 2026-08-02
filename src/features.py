@@ -9,12 +9,18 @@ nlp = spacy.load("en_core_web_sm")
 vader = SentimentIntensityAnalyzer()
 
 INTENSIFIERS = {'very', 'extremely', 'totally', 'absolutely', 'literally',
-                 'completely', 'utterly', 'so', 'really', 'incredibly'}
+                 'completely', 'utterly', 'so', 'really', 'incredibly',
+                 'super', 'insanely', 'ridiculously', 'perfectly', 'seriously',
+                 'truly', 'entirely', 'purely', 'downright', 'exceptionally'}
 
 SARCASM_TRIGGERS = {'yeah right', 'oh great', 'oh good', 'oh joy', 'wow',
                      'shocking', 'surprise surprise', 'what a surprise',
-                     'totally', 'obviously', 'clearly', 'genius'}
-
+                     'totally', 'obviously', 'clearly', 'genius',
+                     'brilliant', 'perfect', 'just great', 'how nice',
+                     'well done', 'good job', 'nice job', 'sure thing',
+                     'of course', 'because that makes sense',
+                     'shocker', 'who could have guessed', 'never saw that coming',
+                     'thanks a lot', 'love that for me', 'living the dream'}
 
 def get_pragmatic_features(text):
     exclamation_count = text.count('!')
@@ -53,13 +59,18 @@ def get_sentiment_features(clean_text):
     }
 
 
+ABSOLUTE_WORDS = {'always', 'never', 'everyone', 'nobody', 'everything',
+                   'nothing', 'every', 'all', 'none', 'completely', 'entirely'}
+
 def get_lexical_features(clean_text):
     words = clean_text.split()
     intensifier_count = sum(1 for w in words if w in INTENSIFIERS)
     trigger_count = sum(1 for phrase in SARCASM_TRIGGERS if phrase in clean_text)
+    absolute_count = sum(1 for w in words if w in ABSOLUTE_WORDS)
     return {
         'intensifier_count': intensifier_count,
         'trigger_phrase_count': trigger_count,
+        'absolute_word_count': absolute_count,
     }
 
 

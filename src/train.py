@@ -8,6 +8,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
+from sklearn.ensemble import VotingClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
@@ -17,7 +19,7 @@ from features import build_tfidf_features
 ENGINEERED_FEATURES = [
     'exclamation_count', 'question_count', 'ellipsis_count', 'caps_ratio', 'quote_count',
     'vader_neg', 'vader_neu', 'vader_pos', 'vader_compound', 'sentiment_incongruity',
-    'intensifier_count', 'trigger_phrase_count',
+    'intensifier_count', 'trigger_phrase_count', 'absolute_word_count',
     'adj_density', 'noun_density', 'verb_density', 'contrast_score'
 ]
 
@@ -41,10 +43,15 @@ def build_combined_features(df):
 
 
 def train_and_evaluate(X_train, X_test, y_train, y_test):
+    nb = MultinomialNB()
+    lr = LogisticRegression(max_iter=1000, random_state=42, C=2.0, class_weight='balanced')
+    svm_base = LinearSVC(random_state=42, max_iter=5000, class_weight='balanced')
+    svm = CalibratedClassifierCV(svm_base, cv=3)  # wraps SVM so it can output probabilities
+
     models = {
-        'naive_bayes': MultinomialNB(),
-        'logistic_regression': LogisticRegression(max_iter=1000, random_state=42, C=0.5, class_weight='balanced'),
-        'svm': LinearSVC(random_state=42, max_iter=5000, class_weight='balanced'),
+        'naive_bayes': nb,
+        'logistic_regression': lr,
+        'svm': svm,
     }
 
     results = {}
@@ -65,6 +72,25 @@ def train_and_evaluate(X_train, X_test, y_train, y_test):
 
         print(f"{name} -> Accuracy: {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1: {f1:.4f}")
 
+    # ---- Voting Classifier: combines all 3 models' predictions ----
+    print("\nTraining voting_ensemble...")
+    voting_clf = VotingClassifier(
+        estimators=[('nb', nb), ('lr', lr), ('svm', svm)],
+        voting='soft'  # uses predicted probabilities, not just majority vote
+    )
+    voting_clf.fit(X_train, y_train)
+    voting_preds = voting_clf.predict(X_test)
+
+    acc = accuracy_score(y_test, voting_preds)
+    prec = precision_score(y_test, voting_preds)
+    rec = recall_score(y_test, voting_preds)
+    f1 = f1_score(y_test, voting_preds)
+
+    results['voting_ensemble'] = {'accuracy': acc, 'precision': prec, 'recall': rec, 'f1': f1}
+    trained_models['voting_ensemble'] = voting_clf
+
+    print(f"voting_ensemble -> Accuracy: {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1: {f1:.4f}")
+
     return trained_models, results
 
 
@@ -82,7 +108,8 @@ def save_artifacts(trained_models, vectorizer, scaler):
         pickle.dump(vectorizer, f)
     with open(os.path.join(models_dir, "scaler.pkl"), "wb") as f:
         pickle.dump(scaler, f)
-
+    with open(os.path.join(models_dir, "voting_model.pkl"), "wb") as f:
+        pickle.dump(trained_models['voting_ensemble'], f)
     print(f"\nAll models saved to {models_dir}")
 
 

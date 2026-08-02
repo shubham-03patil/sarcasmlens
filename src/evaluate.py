@@ -6,10 +6,9 @@ import pandas as pd
 ENGINEERED_FEATURES = [
     'exclamation_count', 'question_count', 'ellipsis_count', 'caps_ratio', 'quote_count',
     'vader_neg', 'vader_neu', 'vader_pos', 'vader_compound', 'sentiment_incongruity',
-    'intensifier_count', 'trigger_phrase_count',
+    'intensifier_count', 'trigger_phrase_count', 'absolute_word_count',
     'adj_density', 'noun_density', 'verb_density', 'contrast_score'
 ]
-
 
 def load_models():
     script_dir = os.path.dirname(os.path.abspath(__file__))
