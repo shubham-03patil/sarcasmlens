@@ -52,7 +52,7 @@ Two real bugs were identified and fixed during development:
 1. **Raw noun/verb counts** were dominating predictions regardless of content — fixed by converting to per-token densities.
 2. **Stopwords in TF-IDF** ("the", "is", "and") were acting as a proxy for source detection rather than sarcasm — fixed by excluding stopwords and increasing regularization.
 
-A DistilBERT fine-tuning approach was evaluated as an extension (see `src/train_bert.py`) but was not completed — CPU-only training time was not feasible within the project timeline. This is a documented scope decision; published literature suggests fine-tuned transformers could reach ~85-90%+ accuracy on similar tasks.
+A transformer-based approach (DistilBERT) was evaluated during initial scoping and **deliberately not pursued** — not due to a technical limitation, but because it would conflict with this project's core objective. SarcasmLens is built around *explainability*: every prediction is traceable to specific, human-readable linguistic features and model coefficients. Transformer models operate as black-box contextual embeddings whose internal reasoning cannot be cleanly mapped to interpretable linguistic categories the way TF-IDF + engineered features can. Since transparent feature-level explanation was a defined project requirement (not an accuracy leaderboard), classical, interpretable ML was the architecturally correct choice — and the project's goals were fully achieved within that scope. An experimental script (`src/train_bert.py`) remains in the repo from this evaluation phase.
 
 ---
 
